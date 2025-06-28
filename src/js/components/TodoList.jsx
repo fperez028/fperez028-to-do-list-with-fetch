@@ -20,7 +20,7 @@ export const TodoList = () => {
                 const formattedTasks = data.todos.map(item => ({
                     id: item.id,
                     label: item.label,
-                    completed: item.done
+                    completed: item.done ?? item.is_done
                 }));
                 setTasks(formattedTasks);
             })
@@ -51,7 +51,9 @@ export const TodoList = () => {
         fetch(`${API_URL}/todos/${id}`, {
             method: "DELETE"
         })
-            .then(() => fetchTasks())
+            .then(() => {
+                setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
+            })
             .catch(err => console.error("Delete task error:", err));
     };
 
@@ -72,20 +74,30 @@ export const TodoList = () => {
         const taskToUpdate = tasks[index];
         const updatedTask = {
             label: taskToUpdate.label,
-            done: !taskToUpdate.completed
+            is_done: !taskToUpdate.completed
         };
+
+        const updatedTasks = [...tasks];
+        updatedTasks[index] = {
+            ...taskToUpdate,
+            completed: !taskToUpdate.completed
+        };
+
+        setTasks(updatedTasks);
 
         fetch(`${API_URL}/todos/${taskToUpdate.id}`, {
             method: "PUT",
             body: JSON.stringify(updatedTask),
             headers: { "Content-Type": "application/json" }
         })
-            .then((res) => {
-                if (!res.ok) throw new Error("Failed to update task");
-                return res.json();
-            })
-            .then(() => fetchTasks()) // Refresh the list
-            .catch(err => console.error("Update error:", err));
+        .then((res) => {
+            if (!res.ok) throw new Error("Failed to update task");
+            return res.json();
+        })
+        .then(data => {
+            console.log("Updated task from server:", data); // <-- Add this
+        })
+        .catch(err => console.error("Update error:", err));
     };
 
     const completedCount = tasks.filter(task => task.completed).length;
@@ -95,6 +107,7 @@ export const TodoList = () => {
             <h1 className="text-center pt-2">To-Do List</h1>
 
             <input
+                id="taskInput"
                 type="text"
                 className="form-control text-center"
                 placeholder="Type task here and press Enter"
