@@ -129,6 +129,7 @@ export const TodoList = () => {
                         >
                             <div className="d-flex align-items-center flex-grow-1">
                                 <input
+                                    id={`taskCompletionCheckbox-${task.id}`}
                                     type="checkbox"
                                     className="form-check-input me-2"
                                     checked={!!task.completed}
@@ -138,13 +139,13 @@ export const TodoList = () => {
                                     {task.label}
                                 </span>
                             </div>
-                            <span
-                                className="text-danger fw-bold delete-btn"
-                                onClick={() => deleteTask(task.id)}
-                                role="button"
+                            <button
+                              className="btn btn-outline-danger btn-sm ms-2 delete-btn"
+                              onClick={() => deleteTask(task.id)}
+                              title="Delete task"
                             >
-                                x
-                            </span>
+                              <i className="bi bi-trash"></i>
+                            </button>
                         </li>
                     ))
                 )}
@@ -156,8 +157,8 @@ export const TodoList = () => {
                         <span>{tasks.length} {tasks.length === 1 ? "item" : "items"}</span>
                         <span>{completedCount} completed</span>
                     </div>
-                    <div className="text-end mt-2">
-                        <button className="btn btn-danger btn-sm" onClick={clearAllTasks}>
+                    <div className="text-center mt-2">
+                        <button className="btn btn-primary btn-sm" onClick={clearAllTasks}>
                             Clear All Tasks
                         </button>
                     </div>
