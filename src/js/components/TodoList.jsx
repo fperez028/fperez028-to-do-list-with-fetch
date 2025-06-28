@@ -1,33 +1,97 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 export const TodoList = () => {
     const [tasks, setTasks] = useState([]);
     const [input, setUserInput] = useState("");
 
-    const addTask = () => {
-        const task = input.trim();
-        if (task) {
-            setTasks([...tasks, { text: task, completed: false }]);
-            setUserInput("");
-        }
+    const API_URL = "https://playground.4geeks.com/todo";
+    const USERNAME = "fperez028";
+
+    // Fetch tasks on mount
+    useEffect(() => {
+        fetchTasks();
+    }, []);
+
+    // Fetch tasks from server
+    const fetchTasks = () => {
+        fetch(`${API_URL}/users/${USERNAME}`)
+            .then(res => res.json())
+            .then(data => {
+                const formattedTasks = data.todos.map(item => ({
+                    id: item.id,
+                    label: item.label,
+                    completed: item.done
+                }));
+                setTasks(formattedTasks);
+            })
+            .catch(err => console.error("Fetch error:", err));
     };
 
-    const deleteTask = (index) => {
-        setTasks(tasks.filter((_, i) => i !== index));
+    // Add a new task
+    const addTask = () => {
+        const trimmed = input.trim();
+        if (!trimmed) return;
+
+        const newTask = { label: trimmed, done: false };
+
+        fetch(`${API_URL}/todos/${USERNAME}`, {
+            method: "POST",
+            body: JSON.stringify(newTask),
+            headers: { "Content-Type": "application/json" }
+        })
+            .then(() => {
+                setUserInput("");
+                fetchTasks();
+            })
+            .catch(err => console.error("Add task error:", err));
+    };
+
+    // Delete a single task
+    const deleteTask = (id) => {
+        fetch(`${API_URL}/todos/${id}`, {
+            method: "DELETE"
+        })
+            .then(() => fetchTasks())
+            .catch(err => console.error("Delete task error:", err));
+    };
+
+    // Clear all tasks
+    const clearAllTasks = () => {
+        const deletions = tasks.map(task =>
+            fetch(`${API_URL}/todos/${task.id}`, {
+                method: "DELETE"
+            })
+        );
+
+        Promise.all(deletions)
+            .then(() => fetchTasks())
+            .catch(err => console.error("Clear all error:", err));
     };
 
     const toggleCompleted = (index) => {
-        setTasks(
-            tasks.map((task, i) =>
-                i === index ? { ...task, completed: !task.completed } : task
-            )
-        );
+        const taskToUpdate = tasks[index];
+        const updatedTask = {
+            label: taskToUpdate.label,
+            done: !taskToUpdate.completed
+        };
+
+        fetch(`${API_URL}/todos/${taskToUpdate.id}`, {
+            method: "PUT",
+            body: JSON.stringify(updatedTask),
+            headers: { "Content-Type": "application/json" }
+        })
+            .then((res) => {
+                if (!res.ok) throw new Error("Failed to update task");
+                return res.json();
+            })
+            .then(() => fetchTasks()) // Refresh the list
+            .catch(err => console.error("Update error:", err));
     };
 
     const completedCount = tasks.filter(task => task.completed).length;
 
     return (
-        <div className="container bg-secondary-subtle shadow rounded-4 mt-5">
+        <div className="container bg-secondary-subtle shadow rounded-4 mt-5 p-3">
             <h1 className="text-center pt-2">To-Do List</h1>
 
             <input
@@ -46,17 +110,26 @@ export const TodoList = () => {
                     </li>
                 ) : (
                     tasks.map((task, index) => (
-                        <li key={index} className="list-group-item d-flex justify-content-between align-items-center">
+                        <li
+                            key={task.id}
+                            className="list-group-item d-flex justify-content-between align-items-center"
+                        >
                             <div className="d-flex align-items-center flex-grow-1">
                                 <input
                                     type="checkbox"
-                                    className="form-check-input"
-                                    checked={task.completed}
+                                    className="form-check-input me-2"
+                                    checked={!!task.completed}
                                     onChange={() => toggleCompleted(index)}
                                 />
-                                <span className="task-text">{task.text}</span>
+                                <span className={`task-text ${task.completed ? "text-decoration-line-through" : ""}`}>
+                                    {task.label}
+                                </span>
                             </div>
-                            <span className="text-danger fw-bold delete-btn" onClick={() => deleteTask(index)} role="button">
+                            <span
+                                className="text-danger fw-bold delete-btn"
+                                onClick={() => deleteTask(task.id)}
+                                role="button"
+                            >
                                 x
                             </span>
                         </li>
@@ -65,10 +138,17 @@ export const TodoList = () => {
             </ul>
 
             {tasks.length > 0 && (
-                <div className="text-muted px-1 d-flex justify-content-between">
-                    <span>{tasks.length} {tasks.length === 1 ? "item" : "items"}</span>
-                    <span>{completedCount} completed</span>
-                </div>
+                <>
+                    <div className="text-muted px-1 d-flex justify-content-between">
+                        <span>{tasks.length} {tasks.length === 1 ? "item" : "items"}</span>
+                        <span>{completedCount} completed</span>
+                    </div>
+                    <div className="text-end mt-2">
+                        <button className="btn btn-danger btn-sm" onClick={clearAllTasks}>
+                            Clear All Tasks
+                        </button>
+                    </div>
+                </>
             )}
         </div>
     );
