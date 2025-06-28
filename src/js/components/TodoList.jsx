@@ -7,12 +7,10 @@ export const TodoList = () => {
     const API_URL = "https://playground.4geeks.com/todo";
     const USERNAME = "fperez028";
 
-    // Fetch tasks on mount
     useEffect(() => {
         fetchTasks();
     }, []);
 
-    // Fetch tasks from server
     const fetchTasks = () => {
         fetch(`${API_URL}/users/${USERNAME}`)
             .then(res => res.json())
@@ -27,7 +25,6 @@ export const TodoList = () => {
             .catch(err => console.error("Fetch error:", err));
     };
 
-    // Add a new task
     const addTask = () => {
         const trimmed = input.trim();
         if (!trimmed) return;
@@ -46,7 +43,6 @@ export const TodoList = () => {
             .catch(err => console.error("Add task error:", err));
     };
 
-    // Delete a single task
     const deleteTask = (id) => {
         fetch(`${API_URL}/todos/${id}`, {
             method: "DELETE"
@@ -57,7 +53,6 @@ export const TodoList = () => {
             .catch(err => console.error("Delete task error:", err));
     };
 
-    // Clear all tasks
     const clearAllTasks = () => {
         const deletions = tasks.map(task =>
             fetch(`${API_URL}/todos/${task.id}`, {
