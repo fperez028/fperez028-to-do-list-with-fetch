@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 
 export const TodoList = () => {
+    const hasInitialized = useRef(false);
     const [tasks, setTasks] = useState([]);
     const [input, setUserInput] = useState("");
 
@@ -8,7 +9,38 @@ export const TodoList = () => {
     const USERNAME = "fperez028";
 
     useEffect(() => {
-        fetchTasks();
+        if (hasInitialized.current) return;
+        hasInitialized.current = true;
+
+        const initializeUser = async () => {
+            try {
+                const res = await fetch(`${API_URL}/users/${USERNAME}`);
+
+                if (res.ok) {
+                    fetchTasks();
+                } else if (res.status === 404) {
+                    const createRes = await fetch(`${API_URL}/users/${USERNAME}`, {
+                        method: "POST"
+                    });
+
+                    const responseBody = await createRes.text();
+                    console.log("POST status:", createRes.status);
+                    console.log("POST response body:", responseBody);
+
+                    if (!createRes.ok) {
+                        throw new Error("Failed to create user");
+                    }
+
+                    fetchTasks();
+                } else {
+                    throw new Error(`Unexpected status: ${res.status}`);
+                }
+            } catch (err) {
+                console.error("User initialization error:", err);
+            }
+        };
+
+      initializeUser();
     }, []);
 
     const fetchTasks = () => {

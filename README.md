@@ -6,6 +6,12 @@ This project can be viewed here:<br>
 https://fperez028-to-do-list-with-fetch.vercel.app/
 
 Features & Functionality<br>
+- On load, checks for existing user account on the server
+    - if user does not exist, a POST is used to create the user and proceed with application
+        - useRef used to prevent multiple console errors resulting from React Strict Mode which intentially runs twice
+            - if a user does not exist, only a single 404 error should be seen on the console then the user is created
+    - if user already exists, no action is taken and the application proceeds
+        - if a user exists, no errors should be seen on the console
 - On load, list is empty
     - reloading with a populated list will retain the last state of the list. i.e. all tasks will show, completion status will remain, and item/completion counts will remain
 - Tasks are added by typing them into the input field and pressing the Enter key
